@@ -1,0 +1,556 @@
+<!doctype html>
+<html class="no-js">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Table Reporter" href="table.html" /><link rel="prev" title="Summary Reporter" href="summary.html" />
+
+    <meta name="generator" content="sphinx-4.5.0, furo 2022.04.07"/>
+        <title>Flame Graph Reporter - memray</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=68f4518137b9aefe99b631505a2064c3c42c9852" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">memray</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand centered" href="index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/logo.png" alt="Logo"/>
+  </div>
+  
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run.html">The <code class="docutils literal notranslate"><span class="pre">run</span></code> subcommand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_allocators.html">Python allocators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/README.html">Example Applications for Memray</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reporters</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="live.html">Live Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">Summary Reporter</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Flame Graph Reporter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="table.html">Table Reporter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html">Tree Reporter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats Reporter</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container"><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="flame-graph-reporter">
+<h1>Flame Graph Reporter<a class="headerlink" href="#flame-graph-reporter" title="Permalink to this headline">#</a></h1>
+<p>The flame graph reporter generates an HTML file containing a flame graph
+representation of the allocations contributing to the tracked process’s peak
+memory usage.</p>
+<p>Flame graphs are a way to visualize how your program is spending its time.
+A few important things about flame graphs:</p>
+<ul class="simple">
+<li><p>The flame graph displays the superposition of all stack traces that
+lead to memory allocations at a given time (normally the time when the
+total amount of allocated memory was highest).</p></li>
+<li><p>A flame graph can’t tell you how many times a function was called,
+only how much memory that function allocated.</p></li>
+<li><p>A stack trace is represented as a column of boxes, where each box
+represents a function call.</p></li>
+<li><p>The x-axis <strong>does not show the passage of time</strong>, so the left-to-right
+ordering has no special meaning: every level just shows the collection
+of functions that were called by the nodes immediately under them.</p></li>
+<li><p>The y-axis shows the stack depth, ordered from root at the bottom to
+leaf at the top. The top box shows the function that made a memory
+allocation and everything beneath that is its ancestry. The function
+beneath a function is its parent.</p></li>
+<li><p>The width of each function box represents how much memory was
+allocated by that function or its children. Functions with wider boxes
+allocated more bytes of memory than those with narrower boxes, in
+proportion to their width.</p></li>
+</ul>
+<section id="interpreting-flame-graphs">
+<h2>Interpreting flame graphs<a class="headerlink" href="#interpreting-flame-graphs" title="Permalink to this headline">#</a></h2>
+<p>Flame graphs can be interpreted as follows:</p>
+<ul class="simple">
+<li><p>The nodes at the top of the flame graph represent functions that
+allocated memory.</p></li>
+<li><p>For quickly identifying the functions that allocated more memory
+directly, look for large plateaus along the top edge, as these show
+a single stack trace was responsible for a large chunk of the total
+memory of the snapshot that the flame graph represents.</p></li>
+<li><p>Reading the flame graph from top down shows the ancestry relationship:
+Every function is called by its parent, which is shown directly below
+it; the parent was called by its parent shown below it, and so on.
+A quick scan downward from a function identifies how it was called.</p></li>
+<li><p>Reading the flame graph from bottom up shows code flow and the bigger
+picture. A function calls all child functions shown above it, which,
+in turn, call functions shown above them. Reading bottom up also shows
+the big picture of code flow before various forks split execution into
+smaller towers.</p></li>
+<li><p>You can directly compare the width of function boxes as wider boxes
+mean more memory was allocated by the given node and those are the
+most important to understand first.</p></li>
+<li><p>Major forks in the flame graph (when a node splits in several ones in
+the next level) can be useful to study: these nodes can indicate
+a logical grouping of code, where a function processes work in stages,
+each with its own function. It can also be caused by a conditional
+statement, which chooses which function to call.</p></li>
+<li><p>If the application is multi-threaded, the stacks of all the threads
+that contribute to the memory peak will appear commingled in the flame
+graph.</p></li>
+</ul>
+</section>
+<section id="simple-example">
+<h2>Simple example<a class="headerlink" href="#simple-example" title="Permalink to this headline">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">a</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">b</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">b</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">d</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+
+<span class="k">def</span> <span class="nf">c</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">"a"</span> <span class="o">*</span> <span class="n">n</span>
+
+<span class="k">def</span> <span class="nf">d</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">"a"</span> <span class="o">*</span> <span class="n">n</span>
+
+<span class="n">a</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This code allocates memory from the system allocator in just 2 places:
+<code class="docutils literal notranslate"><span class="pre">c()</span></code>, and <code class="docutils literal notranslate"><span class="pre">d()</span></code>. This is how the flame graph looks:</p>
+<img alt="_images/simple_example.png" src="_images/simple_example.png"/>
+<p>Here you can see that <code class="docutils literal notranslate"><span class="pre">a()</span></code> called <code class="docutils literal notranslate"><span class="pre">b()</span></code> and that <code class="docutils literal notranslate"><span class="pre">b()</span></code> called
+<code class="docutils literal notranslate"><span class="pre">c()</span></code> and <code class="docutils literal notranslate"><span class="pre">d()</span></code>, which in turn did some allocations. As the boxes of
+<code class="docutils literal notranslate"><span class="pre">c()</span></code> and <code class="docutils literal notranslate"><span class="pre">d()</span></code> are of the same width, you know that both allocated
+the same amount of memory.</p>
+</section>
+<section id="a-more-complete-example">
+<h2>A more complete example<a class="headerlink" href="#a-more-complete-example" title="Permalink to this headline">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">a</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">b</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">h</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+
+<span class="k">def</span> <span class="nf">b</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">c</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">missing</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">d</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">missing</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">"a"</span> <span class="o">*</span> <span class="n">n</span>
+
+<span class="k">def</span> <span class="nf">d</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">e</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="s2">"a"</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)]</span>
+
+<span class="k">def</span> <span class="nf">e</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">"a"</span> <span class="o">*</span> <span class="n">n</span>
+
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">g</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">g</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">"a"</span> <span class="o">*</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span>
+
+<span class="k">def</span> <span class="nf">h</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">i</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">i</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">"a"</span> <span class="o">*</span> <span class="n">n</span>
+
+<span class="n">a</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This code allocates memory from the system allocator in 5 places:
+<code class="docutils literal notranslate"><span class="pre">e()</span></code>, <code class="docutils literal notranslate"><span class="pre">d()</span></code>, <code class="docutils literal notranslate"><span class="pre">g()</span></code>, <code class="docutils literal notranslate"><span class="pre">i()</span></code> and <code class="docutils literal notranslate"><span class="pre">missing()</span></code>. The associated
+flame graph looks like this:</p>
+<img alt="_images/complex_example.png" src="_images/complex_example.png"/>
+<p>The top edge shows that function <code class="docutils literal notranslate"><span class="pre">g()</span></code> allocates the most memory,
+<code class="docutils literal notranslate"><span class="pre">d()</span></code> is wider, but its exposed top edge is smaller, which means that
+<code class="docutils literal notranslate"><span class="pre">d()</span></code> itself allocated less memory than the one allocated by the
+functions called by it. Functions including <code class="docutils literal notranslate"><span class="pre">b()</span></code> and <code class="docutils literal notranslate"><span class="pre">c()</span></code> do not
+not allocate memory themselves directly; rather, their child functions
+did the allocation.</p>
+<p>Functions beneath <code class="docutils literal notranslate"><span class="pre">g()</span></code> show its ancestry: <code class="docutils literal notranslate"><span class="pre">g()</span></code> was called by
+<code class="docutils literal notranslate"><span class="pre">f()</span></code>, which was called by <code class="docutils literal notranslate"><span class="pre">d()</span></code>, and so on.</p>
+<p>Visually comparing the widths of functions <code class="docutils literal notranslate"><span class="pre">b()</span></code> and <code class="docutils literal notranslate"><span class="pre">h()</span></code> shows
+that the <code class="docutils literal notranslate"><span class="pre">b()</span></code> code path allocated about four times more than <code class="docutils literal notranslate"><span class="pre">h()</span></code>.
+The actual functions that did the allocations in each case were their
+children.</p>
+<p>A major fork in the code paths is visible where <code class="docutils literal notranslate"><span class="pre">a()</span></code> calls <code class="docutils literal notranslate"><span class="pre">b()</span></code>
+and <code class="docutils literal notranslate"><span class="pre">h()</span></code>. Understanding why the code does this may be a major clue to
+its logical organization. This may be the result of a conditional (if
+conditional, call <code class="docutils literal notranslate"><span class="pre">b()</span></code>, else call <code class="docutils literal notranslate"><span class="pre">h()</span></code>) or a logical grouping of
+stages (where <code class="docutils literal notranslate"><span class="pre">a()</span></code> is processed in two parts: <code class="docutils literal notranslate"><span class="pre">b()</span></code> and <code class="docutils literal notranslate"><span class="pre">h()</span></code>).
+In our case we know is the second case, as <code class="docutils literal notranslate"><span class="pre">a()</span></code> is creating a list
+with the result of <code class="docutils literal notranslate"><span class="pre">b()</span></code> and <code class="docutils literal notranslate"><span class="pre">h()</span></code>.</p>
+<p>If you look carefully you can notice that <code class="docutils literal notranslate"><span class="pre">missing()</span></code> allocates
+memory, but it does not appear in the flame graph. This is because at
+the time the largest memory peak was reached (when <code class="docutils literal notranslate"><span class="pre">a()</span></code> returned) the
+memory allocated by <code class="docutils literal notranslate"><span class="pre">missing()</span></code> didn’t contribute at all to the total
+amount of memory. This is because the memory allocated by <code class="docutils literal notranslate"><span class="pre">missing()</span></code>
+is deallocated as soon as the call ends.</p>
+<p>With this information we know that if you need to chose a place to start
+looking for optimizations, you should start looking at <code class="docutils literal notranslate"><span class="pre">g()</span></code>, then
+<code class="docutils literal notranslate"><span class="pre">a()</span></code> and then <code class="docutils literal notranslate"><span class="pre">i()</span></code> (in that order) as these are the places that
+allocated the most memory when the program reached its maximum. Of
+course, the actual optimization may be done in the callers of these
+functions, but you have a way to start understanding where to optimize.</p>
+</section>
+<section id="non-relevant-frame-hiding">
+<h2>Non-relevant frame hiding<a class="headerlink" href="#non-relevant-frame-hiding" title="Permalink to this headline">#</a></h2>
+<p>The flame graph exposes a button to show or hide frames which might be
+distracting when interpreting the results, either because they were
+injected by Memray or because they are low-level implementation
+details of CPython. By default, frames tagged as non-relevant are
+hidden. You can reveal them with the “Show Non-Relevant Frames”
+checkbox:</p>
+<img alt="_images/non_relevant_checkbox.png" class="align-center" src="_images/non_relevant_checkbox.png"/>
+<p>Note that allocations in these frames will still be accounted for
+in parent frames, even if they’re hidden.</p>
+</section>
+<section id="memory-leaks-view">
+<span id="id1"></span><h2>Memory Leaks View<a class="headerlink" href="#memory-leaks-view" title="Permalink to this headline">#</a></h2>
+<p>When generating flame graphs, the <code class="docutils literal notranslate"><span class="pre">--leaks</span></code> option can be specified
+to get information for memory that was leaked during the tracking
+(i.e. allocated after tracking started and not deallocated by the time
+tracking ended).</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>The Python allocator doesn’t necessarily release memory to the system
+when Python objects are deallocated and these can still appear as
+“leaks”. When you use the <code class="docutils literal notranslate"><span class="pre">--leaks</span></code> option, you should usually
+also run your application with the <code class="docutils literal notranslate"><span class="pre">PYTHONMALLOC=malloc</span></code>
+environment variable set. See our documentation on <a class="reference internal" href="python_allocators.html"><span class="doc">python
+allocators</span></a> for details.</p>
+</div>
+</section>
+<section id="split-threads-view">
+<span id="id2"></span><h2>Split-Threads View<a class="headerlink" href="#split-threads-view" title="Permalink to this headline">#</a></h2>
+<p>When generating flame graphs, the <code class="docutils literal notranslate"><span class="pre">--split-threads</span></code> option can be
+specified to get thread-specific filtering on the flame graph.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">--split-threads</span></code> is not specified, thread information is not
+displayed on the flame graph. Instead, allocations occurring at the same
+source location across different threads are grouped together. However,
+if <code class="docutils literal notranslate"><span class="pre">--split-threads</span></code> is used, the allocation patterns of individual
+threads can be analyzed.</p>
+<p>When opening the report, the same merged thread view is presented, but
+a new “Filter Thread” drop down will be shown. This can be used to
+select a specific thread to display a flame graph for that one thread:</p>
+<img alt="_images/filter_thread_dropdown.png" src="_images/filter_thread_dropdown.png"/>
+<p>To go back to the merged view, the “Reset” entry can be used in the
+drop down menu.</p>
+<p>Note that the root node (displayed as <strong>memray</strong>) is always present
+and is displayed as thread 0.</p>
+</section>
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">#</a></h2>
+<p>Flame graphs are effective visualization tools for a memory snapshot of
+a program. They give an insightful visual map for the execution of
+Python code and allow navigating areas of interest, letting you
+identify where to start looking for improvements. Unlike other code-path
+visualizations such as acyclic graphs, flame graphs convey information
+intuitively using line lengths and can handle large-scale profiles,
+while usually remaining readable on one screen.</p>
+</section>
+<section id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">#</a></h2>
+<p>The general form of the <code class="docutils literal notranslate"><span class="pre">flamegraph</span></code> subcommand is:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>memray3.x flamegraph <span class="o">[</span>options<span class="o">]</span> &lt;results&gt;
+</pre></div>
+</div>
+<p>(where “x” is the Python minor version).</p>
+<p>The only argument the <code class="docutils literal notranslate"><span class="pre">flamegraph</span></code> subcommand requires is the capture file
+previously generated using <a class="reference internal" href="run.html"><span class="doc">the run subcommand</span></a>.</p>
+<p>The output file will be named <code class="docutils literal notranslate"><span class="pre">memray-flamegraph-&lt;input</span> <span class="pre">file</span> <span class="pre">name&gt;.html</span></code>
+unless the <code class="docutils literal notranslate"><span class="pre">-o</span></code> argument was used to override the default name.</p>
+</section>
+<section id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">#</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">memray</span> <span class="n">flamegraph</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">f</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">leaks</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">split</span><span class="o">-</span><span class="n">threads</span><span class="p">]</span> <span class="n">results</span>
+</pre></div>
+</div>
+<section id="Positional Arguments">
+<h3>Positional Arguments<a class="headerlink" href="#Positional Arguments" title="Permalink to this headline">#</a></h3>
+<dl class="option-list">
+<dt><kbd>results</kbd></dt>
+<dd><p>Results of the tracker run</p>
+</dd>
+</dl>
+</section>
+<section id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">#</a></h3>
+<dl class="option-list">
+<dt><kbd>-o, --output</kbd></dt>
+<dd><p>Output file name</p>
+</dd>
+<dt><kbd>-f, --force</kbd></dt>
+<dd><p>If the output file already exists, overwrite it</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--leaks</kbd></dt>
+<dd><p>Enables <a class="reference internal" href="#memory-leaks-view"><span class="std std-ref">Memory Leaks View</span></a>, where memory that was not deallocated is displayed, instead of peak memory
+usage.</p>
+</dd>
+<dt><kbd>--split-threads</kbd></dt>
+<dd><p>Enables <a class="reference internal" href="#split-threads-view"><span class="std std-ref">Split-Threads View</span></a>, where each thread can be displayed separately. Allocations on the same source
+line across different threads are not merged, if this flag is passed.</p>
+</dd>
+</dl>
+</section>
+<p><p>Please submit feedback, ideas and bugs by filing a new issue at
+<a class="reference external" href="https://github.com/bloomberg/memray/issues">https://github.com/bloomberg/memray/issues</a></p>
+</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="table.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Table Reporter</div>
+              </div>
+              <svg><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="summary.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Summary Reporter</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Flame Graph Reporter</a><ul>
+<li><a class="reference internal" href="#interpreting-flame-graphs">Interpreting flame graphs</a></li>
+<li><a class="reference internal" href="#simple-example">Simple example</a></li>
+<li><a class="reference internal" href="#a-more-complete-example">A more complete example</a></li>
+<li><a class="reference internal" href="#non-relevant-frame-hiding">Non-relevant frame hiding</a></li>
+<li><a class="reference internal" href="#memory-leaks-view">Memory Leaks View</a></li>
+<li><a class="reference internal" href="#split-threads-view">Split-Threads View</a></li>
+<li><a class="reference internal" href="#conclusion">Conclusion</a></li>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#reference">Reference</a><ul>
+<li><a class="reference internal" href="#Positional Arguments">Positional Arguments</a></li>
+<li><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/scripts/furo.js"></script>
+    </body>
+</html>
